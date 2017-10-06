@@ -1,1 +1,1 @@
-# html5-libjson-rpc-cpp-websocket
+This project is to create the communication between html5/javascript and the libjson-rpc-cpp along websocket feature.Add new recipe of libjson-rpc-cpp getting the source code from git://github.com/toolmmy/libjson-rpc-cpp.git that supports websocket feature beside json-rpc-cpp.However this libjson-rpc-cpp just run on Firefox but Chrome because per-message deflate - websocket compression (https://www.igvita.com/2013/11/27/configuring-and-optimizing-websocket-compression/) is not supported on the websocket that is using mongoose library.
