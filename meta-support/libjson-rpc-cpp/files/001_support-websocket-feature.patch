@@ -1,0 +1,230 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7236bd1..bbcad0d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -32,10 +32,11 @@ install(FILES ${PROJECT_BINARY_DIR}/version.h DESTINATION include/jsonrpc)
+ 
+ 
+ add_subdirectory(src/jsonrpc)
+-add_subdirectory(src/test)
+-add_subdirectory(src/stubgenerator)
+-add_subdirectory(src/example)
+-add_subdirectory(src/example/websocket)
++# disable test suites
++#add_subdirectory(src/test)
++#add_subdirectory(src/stubgenerator)
++#add_subdirectory(src/example)
++#add_subdirectory(src/example/websocket)
+ 
+ # uninstall target
+ configure_file(
+diff --git a/src/jsonrpc/connectors/websocketserver.cpp b/src/jsonrpc/connectors/websocketserver.cpp
+index 1d53f77..2f7c5cf 100644
+--- a/src/jsonrpc/connectors/websocketserver.cpp
++++ b/src/jsonrpc/connectors/websocketserver.cpp
+@@ -336,16 +336,14 @@ namespace jsonrpc
+         return this->SendData(conn, WS_OPCODE_TEXT, response);
+     }
+ 
+-    bool WebsocketServer::SendEvent(const std::string& event)
++    bool WebsocketServer::SendEventData(const std::string& data)
+     {
+-    	bool result = false;
++    	bool result = true;
++    	websocketConnectionList::const_iterator it;
+ 
+-    	websocketConnectionList::iterator it;
+-    	std::vector<struct mg_connection*> deathList;
+-    	for (it = this->_wsConnections.begin(); it != this->_wsConnections.end(); ++it)
++    	for(it = this->_wsConnections.begin(); it != this->_wsConnections.end(); ++it)
+     	{
+-    		result &= this->SendData(it->conn, WS_OPCODE_TEXT, event);
+-
++    		result &= this->SendData(it->conn, WS_OPCODE_TEXT, data);
+     	}
+ 
+     	return result;
+diff --git a/src/jsonrpc/connectors/websocketserver.h b/src/jsonrpc/connectors/websocketserver.h
+index 1a37b01..31b6f2e 100644
+--- a/src/jsonrpc/connectors/websocketserver.h
++++ b/src/jsonrpc/connectors/websocketserver.h
+@@ -64,7 +64,10 @@ namespace jsonrpc
+              */
+             bool virtual SendResponse(const std::string& response, void* addInfo = NULL);
+ 
+-            bool virtual SendEvent(const std::string& resonse);
++            /**
++             * @brief Sends an event including its data to the client.
++             */
++            virtual bool SendEventData(const std::string& data);
+ 
+         private:
+ 
+diff --git a/src/jsonrpc/rpc.h b/src/jsonrpc/rpc.h
+index a0471ce..55f7ed7 100644
+--- a/src/jsonrpc/rpc.h
++++ b/src/jsonrpc/rpc.h
+@@ -13,6 +13,13 @@
+ #include "server.h"
+ #include "client.h"
+ 
++/**
++ * @date 17.02.2014 15:10
++ * @author dot2wa2 <tom.doehring@de.bosch.com>
++ * @brief JsonRpcContext added
++ */
++#include "rpccontext.h"
++
+ //For error handling and catching Exceptions.
+ #include "exception.h"
+ 
+diff --git a/src/jsonrpc/rpccontext.h b/src/jsonrpc/rpccontext.h
+new file mode 100644
+index 0000000..2014113
+--- /dev/null
++++ b/src/jsonrpc/rpccontext.h
+@@ -0,0 +1,75 @@
++
++#ifndef RPCCONTEXT_H_
++#define RPCCONTEXT_H_
++
++namespace jsonrpc {
++
++	/**
++	 * @brief This class provides the JSON-RPC context. This context is used to register methods and notifications as well as to forward events.
++	 */
++	class JsonRpcContext {
++		public:
++
++			typedef void (*wrapperMethodPointer_t)(const Json::Value &parameter, Json::Value &result);
++
++			/**
++			 * @brief Creates a new instance of the context.
++			 */
++			JsonRpcContext() {
++			}
++
++			/**
++			 * @brief Destroys the current object.
++			 */
++			virtual ~JsonRpcContext() {
++			}
++
++			/**
++			 * @brief Registers a new method to the context.
++			 * @param procedure The method description of the procedure which will be registered
++			 * @param ptr The function pointer.
++			 */
++			virtual void registerMethod(const Procedure* procedure, wrapperMethodPointer_t ptr) = 0;
++
++			/**
++			 * @brief Registers a new notification.
++			 */
++			virtual void registerNotification() = 0;
++
++			/**
++			 * @brief Forwards an event to the connected client (if the transport mechanism supports bidirectional communication).
++			 * @param topic The event topic.
++			 * @param data The data in JSON format.
++			 */
++			virtual void handleEvent(const std::string& topic, const Json::Value& data) = 0;
++	};
++
++} /* namespace jsonrpc */
++
++#endif /* RPCCONTEXT_H_ */
+diff --git a/src/jsonrpc/server.h b/src/jsonrpc/server.h
+index 8cc8498..4a1c945 100644
+--- a/src/jsonrpc/server.h
++++ b/src/jsonrpc/server.h
+@@ -5,11 +5,21 @@
+  * @date    30.12.2012
+  * @author  Peter Spiess-Knafl <peter.knafl@gmail.com>
+  * @license See attached LICENSE.txt
++ ************************************************************************
++ @modified: 26.11.2013
++ @content:
++ - void sendEvent(const std::string& eventTopic, const Json::Value& data) added
++
+  ************************************************************************/
+ 
+ #ifndef SERVER_H_
+ #define SERVER_H_
+ 
++
++#define EVENT_TOPIC_KEY		"topic"
++#define EVENT_DATA_KEY		"data"
++
+ #include <map>
+ #include <string>
+ #include <vector>
+@@ -64,11 +74,11 @@ namespace jsonrpc
+             {
+                 return this->connection->StopListening();
+             }
+-
+-            virtual bool SendEvent(const Json::Value& eventData)
+-            {
+-            	return this->connection->SendEvent(eventData.asString());
+-            }
++//            virtual bool SendEvent(const Json::Value& eventData)
++//            {
++//            	return this->connection->SendEvent(eventData.asString());
++//            }
+ 
+             /**
+              * @brief Returns the protocol instance, which can be used to get all registered Methods.
+@@ -91,6 +101,21 @@ namespace jsonrpc
+                 (instance->*notifications[proc->GetProcedureName()])(input);
+             }
+ 
++            void sendEvent(const std::string& eventTopic, const Json::Value& data)
++            {
++
++				Json::Value payload;
++				Json::FastWriter writer;
++
++				payload[EVENT_TOPIC_KEY] = eventTopic;
++				payload[EVENT_DATA_KEY] = data;
++
++				if (!this->connection->SendEventData(writer.write(payload))) {
++					std::cout << "Couldn't send event <" << eventTopic << ">" << std::endl;
++				}
++
++		}
++
+         protected:
+             virtual bool bindMethod(std::string& name, methodPointer_t method)
+             {
+diff --git a/src/jsonrpc/serverconnector.h b/src/jsonrpc/serverconnector.h
+index c093216..d482a97 100644
+--- a/src/jsonrpc/serverconnector.h
++++ b/src/jsonrpc/serverconnector.h
+@@ -5,6 +5,12 @@
+  * @date    31.12.2012
+  * @author  Peter Spiess-Knafl <peter.knafl@gmail.com>
+  * @license See attached LICENSE.txt
++ ************************************************************************
++ @modified: 26.11.2013
++ @content:
++ -  virtual bool SendEventData(const std::string& data) added
++
+  ************************************************************************/
+ 
+ #ifndef SERVERCONNECTOR_H_
+@@ -43,11 +49,11 @@ namespace jsonrpc
+                     void* addInfo = NULL) = 0;
+ 
+             /**
+-             * This method sends an event message to all connected clients. This method can be useful to notify all connected clients of a system event or anything else.
+-             * @param data - the event message or serialized data that should be send to the client
+-             * @return returns true on if the event has been sent, otherwise this method returns false.
++             * This method forwards an event to the client in any way that is appropriate for the derived connector class.
++             * @param data - raw string based data
++             * @return returns true on success, false otherwise
+              */
+-            bool virtual SendEvent(const std::string& data) = 0;
++            virtual bool SendEventData(const std::string& data) = 0;
+ 
+             /**
+              * This method must be called, when a request is recognised. It will do everything else for you (including sending the response).

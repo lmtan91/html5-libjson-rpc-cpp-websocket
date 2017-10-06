@@ -1,0 +1,55 @@
+<!doctype html>
+<html ng-app="guiApp">
+<head lang="en">
+  <meta charset="utf-8">
+  <!-- <meta name="description" content=""> -->
+  <meta name="description" content="oc">
+  <!-- <meta name="viewport" content="width=device-width;  "> -->
+  <meta name="author" content="">
+  <title>gui</title>
+  <link rel="stylesheet" href="styles/css/main.css">
+  <link rel="stylesheet" href="styles/css/features/dishes.css">
+  <link rel="stylesheet" href="styles/css/features/menu.css">
+  <link rel="stylesheet" href="styles/css/features/list.css">
+  <link rel="stylesheet" href="styles/css/features/assist.css">
+  <link rel="stylesheet" href="../bower_components/angularjs-slider/dist/rzslider.css">
+  <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.min.css">
+  <link href="../bower_components/angular-bootstrap/ui-bootstrap-csp.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles/css/features/linear.css">
+
+
+  <!-- endbuild -->
+</head>
+<body ngTouch="preventDefault()">
+  <script src="../bower_components/angular/angular.js"></script>
+  <script src="../bower_components/angular-animate/angular-animate.js"></script>
+  <script src="../bower_components/angular-ui-router/release/angular-ui-router.js"></script>
+  <script src="../bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+  <script src="../bower_components/ng-websocket/ng-websocket.js"></script>
+
+  <script src="angular-carousel.js"></script>
+  <link href='angular-carousel.css' rel='stylesheet' type='text/css'>
+  <link href='demo.css' rel='stylesheet' type='text/css'>
+  <script src="../bower_components/angular-touch/angular-touch.js"></script>
+  <script src="js/heatsetting/rzslider.js"></script>
+  <script src="js/assist/constants.js"></script>
+  <script src="js/assist/assist.module.js"></script>
+  <script src="js/assist/carousel.controller.js"></script>
+  <script src="js/router/router.module.js"></script>
+  <script src="js/heatsetting/heatsetting.module.js"></script>
+  <script src="js/heatsetting/lineargauge.controller.js"></script>
+  <script src="js/menu/menu.module.js"></script>
+  <script src="js/menu/carousel.controller.js"></script>
+  <script src="js/touchmove/touchmove.module.js"></script>
+  <script src="js/touchmove/assist.directive.js"></script>
+  
+  <script src="js/app.js"></script>
+
+
+
+
+  <div class="bg" id="wrapper">
+    <div ui-view="master"></div>
+  </div>
+</body>
+</html>

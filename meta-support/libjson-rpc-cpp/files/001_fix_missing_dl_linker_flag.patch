@@ -1,0 +1,13 @@
+--- a/src/jsonrpc/CMakeLists.txt	2013-10-23 16:49:38.722702571 +0200
++++ b/src/jsonrpc/CMakeLists.txt	2013-10-23 16:46:46.378698205 +0200
+@@ -12,8 +12,8 @@
+ set_target_properties(jsonrpc jsonrpcStatic PROPERTIES VERSION "${VERSION_STRING}" SOVERSION "${VERSION_MAJOR}")
+ 
+ 
+-target_link_libraries(jsonrpc ${CURL_LIBRARIES})
+-target_link_libraries(jsonrpcStatic ${CURL_LIBRARIES})
++target_link_libraries(jsonrpc ${CURL_LIBRARIES} dl)
++target_link_libraries(jsonrpcStatic ${CURL_LIBRARIES} dl)
+ 
+ 
+ install(FILES ${jsonrpc_header} DESTINATION include/jsonrpc) 
